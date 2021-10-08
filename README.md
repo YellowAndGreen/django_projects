@@ -1,1 +1,1 @@
-django_projects
+## a django-learner's initial website
