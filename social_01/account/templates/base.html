@@ -33,6 +33,18 @@ Hello {{ request.user.first_name }},
 </span>
 </div>
 
+{#增加信息#}
+{% if messages %}
+<ul class="messages">
+{% for message in messages %}
+<li class="{{ message.tags }}">
+{{ message|safe }}
+<a href="#" class="close">x</a>
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+
 <div id="content">
 {% block content %}
 {% endblock %}
