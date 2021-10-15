@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ image.title }}{% endblock %}
+{% block content %}
+<h1>{{ image.title }}</h1>
+{#使用缩略图，高度设为0是弹性高度#}
+{% load thumbnail %}
+<a href="{{ image.image.url }}">
+<img src="{% thumbnail image.image 300x0 %}" class="image-detail">
+</a>
+
+{#使用with来保存结果，避免查询两次#}
+{% with total_likes=image.users_like.count users_like=image.users_like.all %}
+<div class="image-info">
+<div>
+<span class="count">
+<span class="total">{{ total_likes }}</span>like{{ total_likes|pluralize }}
+</span>
+{#data开头表示是应用数据#}
+<a href="#" data-id="{{ image.id }}" data-action="{% if request.user in users_like %}un{% endif %}like"
+class="like button">
+{% if request.user not in users_like %}
+Like
+{% else %}
+Unlike
+{% endif %}
+</a>
+
+</div>
+{{ image.description|linebreaks }}
+</div>
+<div class="image-likes">
+{% for user in users_like %}
+<div>
+<img src="{{ user.profile.photo.url }}">
+<p>{{ user.first_name }}</p>
+</div>
+{% empty %}
+Nobody likes this image yet.
+{% endfor %}
+</div>
+{% endwith %}
+{% endblock %}
+
+{% block domready %}
+//寻找所有like的a标签，定义一个handler函数
+$('a.like').click(function(e){
+//e.preventDefault()阻止默认点击行为
+e.preventDefault();
+//执行异步请求
+// 仅检索images app的url
+// 第二个参数获取数据
+$.post('{% url "images:like" %}',
+{
+id: $(this).data('id'),
+action: $(this).data('action')
+},
+//定义一个回调函数
+function(data){
+if (data['status'] == 'ok')
+{
+var previous_action = $('a.like').data('action');
+// toggle data-action
+$('a.like').data('action', previous_action == 'like' ?
+'unlike' : 'like');
+// toggle link text
+$('a.like').text(previous_action == 'like' ? 'Unlike' :
+'Like');
+// update total likes
+var previous_likes = parseInt($('span.count .total').
+text());
+$('span.count .total').text(previous_action == 'like' ?
+previous_likes + 1 : previous_likes - 1);
+}
+}
+);
+});
+{% endblock %}

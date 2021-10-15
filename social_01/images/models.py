@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.urls import reverse
 from django.utils.text import slugify
 
 
@@ -28,3 +29,7 @@ class Image(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        # 使用名字和参数通过urls.py反查url
+        return reverse('images:detail', args=[self.id, self.slug])

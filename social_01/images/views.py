@@ -1,7 +1,14 @@
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+
+from common.decorators import ajax_required
 from .forms import ImageCreateForm
+from django.shortcuts import get_object_or_404
+from .models import Image
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.http import require_POST
 
 
 # Create your views here.
@@ -26,3 +33,61 @@ def image_create(request):
     return render(request, 'image/create.html',
                   {'section': 'images',
                    'form': form})
+
+
+def image_detail(request, id, slug):
+    image = get_object_or_404(Image, id=id, slug=slug)
+    return render(request,
+                  'image/detail_0.html',
+                  {'section': 'images',
+                   'image': image})
+
+
+@login_required
+@require_POST
+@ajax_required
+def image_like(request):
+    image_id = request.POST.get('id')
+    # action是喜欢或不喜欢
+    action = request.POST.get('action')
+    if image_id and action:
+        try:
+            image = Image.objects.get(id=image_id)
+            if action == 'like':
+                image.users_like.add(request.user)
+            else:
+                image.users_like.remove(request.user)
+            return JsonResponse({'status': 'ok'})
+        except:
+            pass
+    return JsonResponse({'status': 'error'})
+
+
+@login_required
+def image_list(request):
+    # 这里出了问题，返回的Images数量和在控制台返回的数量不一样！！！
+    # 问题出在paginator = Paginator(images, 8)的8原来不知道怎么改成了1
+    images = Image.objects.all()
+    print(len(images))
+    paginator = Paginator(images, 8)
+    page = request.GET.get('page')
+    try:
+        images = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer deliver the first page
+        images = paginator.page(1)
+    except EmptyPage:
+        if request.is_ajax():
+            # If the request is AJAX and the page is out of range
+            # return an empty page
+            return HttpResponse('')
+        # If page is out of range deliver last page of results
+        images = paginator.page(paginator.num_pages)
+    print(len(images))
+    if request.is_ajax():
+        return render(request,
+                      'image/list_ajax.html',
+                      {'section': 'images', 'images': images})
+    return render(request,
+                  'image/list.html',
+                  {'section': 'images', 'images': images})
