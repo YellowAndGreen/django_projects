@@ -31,5 +31,6 @@ urlpatterns = [
     path("register/", views.register, name="register"),
     path('edit/', views.edit, name='edit'),
     path('users/', views.user_list, name='user_list'),
+    path('users/follow/', views.user_follow, name='user_follow'),  # 一定要在user_detail之前，否则会识别错误
     path('users/<username>/', views.user_detail, name='user_detail'),
 ]

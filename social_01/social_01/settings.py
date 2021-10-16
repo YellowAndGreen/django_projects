@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "images.apps.ImagesConfig",
     'easy_thumbnails',
     "django_extensions",
+    "actions.apps.ActionsConfig"
 ]
 
 MIDDLEWARE = [
@@ -150,9 +151,14 @@ AUTHENTICATION_BACKENDS = [
     'account.authentication.EmailAuthBackend',
 ]
 
+# 增加geturl方法
 from django.urls import reverse_lazy
 
 ABSOLUTE_URL_OVERRIDES = {
     'auth.user': lambda u: reverse_lazy('user_detail',
                                         args=[u.username])
 }
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6360
+REDIS_DB = 0

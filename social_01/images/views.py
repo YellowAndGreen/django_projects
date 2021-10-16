@@ -9,6 +9,11 @@ from django.shortcuts import get_object_or_404
 from .models import Image
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
+from actions.utils import create_action
+import redis
+from django.conf import settings
+
+r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB)
 
 
 # Create your views here.
@@ -24,6 +29,7 @@ def image_create(request):
             # assign current user to the item
             new_item.user = request.user
             new_item.save()
+            create_action(request.user, 'bookmarked image', new_item)
             messages.success(request, 'Image added successfully')
             # redirect to new created item detail view
             return redirect(new_item.get_absolute_url())
@@ -37,10 +43,15 @@ def image_create(request):
 
 def image_detail(request, id, slug):
     image = get_object_or_404(Image, id=id, slug=slug)
+    # incr每次调用时增加1，括号内分别为对象名，id和field值域
+    total_views = r.incr(f'image:{image.id}:views')
+    # 增加图片排名
+    r.zincrby("image_ranking", 1, image.id)
     return render(request,
-                  'image/detail_0.html',
+                  'image/detail.html',
                   {'section': 'images',
-                   'image': image})
+                   'image': image,
+                   'total_views': total_views})
 
 
 @login_required
@@ -55,6 +66,7 @@ def image_like(request):
             image = Image.objects.get(id=image_id)
             if action == 'like':
                 image.users_like.add(request.user)
+                create_action(request.user, "like", image)
             else:
                 image.users_like.remove(request.user)
             return JsonResponse({'status': 'ok'})
@@ -68,7 +80,7 @@ def image_list(request):
     # 这里出了问题，返回的Images数量和在控制台返回的数量不一样！！！
     # 问题出在paginator = Paginator(images, 8)的8原来不知道怎么改成了1
     images = Image.objects.all()
-    print(len(images))
+    # print(len(images))
     paginator = Paginator(images, 8)
     page = request.GET.get('page')
     try:
@@ -83,7 +95,7 @@ def image_list(request):
             return HttpResponse('')
         # If page is out of range deliver last page of results
         images = paginator.page(paginator.num_pages)
-    print(len(images))
+    # print(len(images))
     if request.is_ajax():
         return render(request,
                       'image/list_ajax.html',
@@ -91,3 +103,21 @@ def image_list(request):
     return render(request,
                   'image/list.html',
                   {'section': 'images', 'images': images})
+
+
+@login_required
+def image_ranking(request):
+    # 得到排名前10的图片
+    image_ranking = r.zrange('image_ranking', 0, -1, desc=True)[:10]
+    # 获取id
+    image_ranking_ids = [int(id) for id in image_ranking]
+    print(len(image_ranking_ids))
+    # get most viewed images
+    most_viewed = list(Image.objects.filter(
+        id__in=image_ranking_ids))
+    # 以id排序
+    most_viewed.sort(key=lambda x: image_ranking_ids.index(x.id))
+    return render(request,
+                  'image/ranking.html',
+                  {'section': 'images',
+                   'most_viewed': most_viewed})
