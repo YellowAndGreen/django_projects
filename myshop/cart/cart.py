@@ -1,7 +1,5 @@
 from decimal import Decimal
 from django.conf import settings
-from django.forms import model_to_dict
-
 from shop.models import Product
 
 
@@ -15,7 +13,6 @@ class Cart(object):
         cart = self.session.get(settings.CART_SESSION_ID)
         if not cart:
             # save an empty cart in the session
-            # 本质是键值对
             cart = self.session[settings.CART_SESSION_ID] = {}
         self.cart = cart
 
@@ -24,17 +21,14 @@ class Cart(object):
         Iterate over the items in the cart and get the products
         from the database.
         """
-        # 会话的键列表
         product_ids = self.cart.keys()
-        # in关键字：以一个列表查找，对里面每个元素查找的结果放在一起
+        # get the product objects and add them to the cart
         products = Product.objects.filter(id__in=product_ids)
 
         cart = self.cart.copy()
         for product in products:
-            # 加入product实例
             cart[str(product.id)]['product'] = product
-            # cart[str(product.id)]['product'] = {'url': product.get_absolute_url(), 'image': product.image,
-            #                                     'image_url': product.image.url, 'name': product.name}
+
         for item in cart.values():
             item['price'] = Decimal(item['price'])
             item['total_price'] = item['price'] * item['quantity']
@@ -50,17 +44,14 @@ class Cart(object):
         """
         Add a product to the cart or update its quantity.
         """
-        # 转为str是因为json键只能是string
         product_id = str(product.id)
         if product_id not in self.cart:
             self.cart[product_id] = {'quantity': 0,
-                                     'price': product.price}
-            # print(list(self.cart))
+                                      'price': str(product.price)}
         if override_quantity:
             self.cart[product_id]['quantity'] = quantity
         else:
             self.cart[product_id]['quantity'] += quantity
-        # print(product_id)
         self.save()
 
     def save(self):
@@ -82,5 +73,4 @@ class Cart(object):
         self.save()
 
     def get_total_price(self):
-
         return sum(Decimal(item['price']) * item['quantity'] for item in self.cart.values())

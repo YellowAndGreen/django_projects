@@ -15,7 +15,6 @@
         {{ product.category }}
       </a>
     </h2>
-    {#这里的$只代表美元符#}
     <p class="price">${{ product.price }}</p>
     <form action="{% url "cart:cart_add" product.id %}" method="post">
       {{ cart_product_form }}
