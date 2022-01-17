@@ -1,0 +1,30 @@
+{% extends "flashcards/base.html" %}
+{% load static %}
+{% load flashcards_tags %}
+{% block title %}Search For {{ searchvalue }}{% endblock %}
+
+{% block Search %} active{% endblock %}
+{% block content %}
+<div>
+<form  class="d-flex align-items-center  mb-2 mb-lg-0" method="get">
+{{ form.as_p }}
+{% csrf_token %}
+</form>
+</div>
+    <div>
+    <ul>
+    {% for card in cards %}
+        <li><a href="{% url 'flashcards:card_detail' pk=card.id %}">{{ card.group }} - {{ card.question|pureword |safe}} </a><br> {{ card.example |safe}}</li>
+    {% empty %}
+        <li>No result</li>
+    {% endfor %}
+    </ul>
+    </div>
+{% endblock %}
+
+{% block script %}
+    var query_text = document.getElementsByTagName("label");
+    query_text[0].style.display='none';
+    var input = document.getElementById('id_query');
+    input.setAttribute('class','form-control');
+{% endblock %}
