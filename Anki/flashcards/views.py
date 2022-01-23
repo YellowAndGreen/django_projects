@@ -7,6 +7,8 @@ from .models import Card, Recitedata
 from .forms import *
 from django.db.models import Q
 import random
+from django.http import HttpResponse
+from django.contrib.auth import authenticate, login
 
 
 class CardListView(ListView):
@@ -52,13 +54,12 @@ def recitedatadisplay(request):
 def search(request):
     cards = []
     cd = {"query": ''}
-    if request.method == 'GET':
-        form = SearchForm(request.GET)
-        if form.is_valid():
-            cd = form.cleaned_data
-            cards = Card.objects.filter(
-                Q(question__icontains=cd['query']) | Q(example__icontains=cd['query']))
-    else:
+    form = SearchForm(request.GET)
+    if form.is_valid():
+        cd = form.cleaned_data
+        cards = Card.objects.filter(
+            Q(question__icontains=cd['query']) | Q(example__icontains=cd['query']))
+    if cd['query'] == '':
         form = SearchForm()
     return render(request, 'flashcards/search.html', {'cards': cards, 'searchvalue': cd['query'], 'form': form})
 
@@ -84,3 +85,22 @@ def undo(request, card_id):
     card[0].recitedata.latest('date').delete()
 
     return redirect(card[0].get_absolute_url())
+
+
+def user_login(request):
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            user = authenticate(request, username=cd['username'], password=cd['password'])
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    return HttpResponse('Authenticated successfully!')
+                else:
+                    return HttpResponse('Disabled Account')
+            else:
+                return HttpResponse('Invalid Login')
+    else:
+        form = LoginForm()
+    return render(request, 'flashcards/account/login.html', {'form': form})

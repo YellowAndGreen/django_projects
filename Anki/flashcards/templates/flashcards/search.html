@@ -2,7 +2,13 @@
 {% load static %}
 {% load flashcards_tags %}
 {% block title %}Search For {{ searchvalue }}{% endblock %}
-
+{% block head %}
+    <style>
+        .link{
+            text-decoration: none;
+        }
+    </style>
+{% endblock %}
 {% block Search %} active{% endblock %}
 {% block content %}
 <div>
@@ -11,14 +17,26 @@
 {% csrf_token %}
 </form>
 </div>
-    <div>
-    <ul>
-    {% for card in cards %}
-        <li><a href="{% url 'flashcards:card_detail' pk=card.id %}">{{ card.group }} - {{ card.question|pureword |safe}} </a><br> {{ card.example |safe}}</li>
+    <div class="container-fluid">
+<ol class="list-group list-group-numbered">
+   {% for card in cards %}
+  <li class="list-group-item d-flex justify-content-between align-items-start">
+    <div class="ms-2 me-auto" >
+        <div class="fw-bold"><a class='link' href="{% url 'flashcards:card_detail' pk=card.id %}">{{ card.group }} - {{ card.question|pureword |safe}}</a></div>
+      {{ card.example |safe}}
+    </div>
+
+  </li>
     {% empty %}
-        <li>No result</li>
+   <li class="list-group-item d-flex justify-content-between align-items-start">
+    <div class="ms-2 me-auto">
+      <div class="fw-bold">No Results</div>
+      Search Again!
+    </div>
+
+  </li>
     {% endfor %}
-    </ul>
+</ol>
     </div>
 {% endblock %}
 

@@ -7,6 +7,12 @@
     <style>
     .word.accordion-button::after{
     display: none;}
+    #footer{
+    position: fixed;
+    bottom: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    }
     </style>
 {% endblock %}
 {% block Recite %} active{% endblock %}
@@ -54,16 +60,20 @@
     </div>
   </div>
 </div>
+
+    <!-- 音频 -->
+    <audio autoplay id="audio" src={{object.question|pureword|youdao}}>ERROR</audio>
+{% endblock %}
+
+{% block footer %}
     <!-- 难易选项 -->
     <div class="btn-group" role="group" aria-label="Basic mixed styles example">
-        <button type="button" class="btn btn-danger" onClick=undo()>UNDO</button>
+        <button type="button" class="btn btn-secondary" onClick=undo()>UNDO</button>
         <button type="button" class="btn btn-danger" onClick="location.href='{% url "flashcards:recite" object.id 4%}'">FORGET</button>
         <button type="button" class="btn btn-warning" onClick="location.href='{% url "flashcards:recite" object.id 3%}'">DIFF</button>
         <button type="button" class="btn btn-info" onClick="location.href='{% url "flashcards:recite" object.id 2%}'">MID</button>
         <button type="button" class="btn btn-success" onClick="location.href='{% url "flashcards:recite" object.id 1%}'">EASY</button>
     </div>
-    <!-- 音频 -->
-    <audio autoplay id="audio" src={{object.question|pureword|youdao}}>ERROR</audio>
 {% endblock %}
 
 {% block script %}
