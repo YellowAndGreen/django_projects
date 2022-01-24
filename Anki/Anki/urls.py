@@ -21,5 +21,5 @@ from django.urls import path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('flashcards/', include("flashcards.urls", namespace="flashcards")),
-
+    path('account/', include('account.urls', namespace='account')),
 ]

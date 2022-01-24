@@ -31,14 +31,20 @@
           <li class="nav-item">
             <a class="p-2 nav-link{% block Search %}{% endblock %}" href={% url 'flashcards:search'%}  >Search</a>
           </li>
+          <li class="nav-item">
+            <a class="p-2 nav-link{% block WebSearch %}{% endblock %}" href={% url 'flashcards:websearch'%}  >WebSearch</a>
+          </li>
+          <li class="nav-item">
+            <a class="p-2 nav-link{% block Dict %}{% endblock %}" href={% url 'flashcards:dict'%}  >Dict</a>
+          </li>
         </ul>
-        {% block search %}{% endblock %}
+{#        {% block search %}{% endblock %}#}
         </div>
 
       </div>
 
   </header>
-    <div id="content">
+    <div class="container-fluid" id="content">
       {% block content %}
       {% endblock %}
     </div>
@@ -49,6 +55,7 @@
       {% endblock %}
     </footer>
     </div>
+
     <script src="{% static "bootstrap.js" %}"></script>
   <script>{% block script %}{% endblock %}
 

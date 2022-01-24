@@ -1,0 +1,33 @@
+{% extends "flashcards/base.html" %}
+{% load static %}
+{% load flashcards_tags %}
+{% block title %}{{ searchvalue }}{% endblock %}
+{% block head %}
+    <style>
+    #id_query{
+        margin-top: 4%;
+    }
+    </style>
+{% endblock %}
+{% block Dict %} active{% endblock %}
+{% block content %}
+<div>
+<form  class="d-flex align-items-center  mb-2 mb-lg-0" method="get">
+{{ form.as_p }}
+
+
+</form>
+</div>
+    <div class="container-fluid">
+    {{ html_result|safe }}
+    </div>
+
+{% endblock %}
+
+{% block script %}
+    var query_text = document.getElementsByTagName("label");
+    query_text[0].style.display='none';
+    var input = document.getElementById('id_query');
+    //设定为bootstrap的样式
+    input.setAttribute('class','form-control');
+{% endblock %}

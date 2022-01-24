@@ -10,25 +10,26 @@
         #red{
             color: red;
         }
-                #id_query{
+        #id_query{
         margin-top: 4%;}
     </style>
 {% endblock %}
-{% block Search %} active{% endblock %}
+{% block WebSearch %} active{% endblock %}
 {% block content %}
 <div>
 <form  class="d-flex align-items-center  mb-2 mb-lg-0" method="get">
 {{ form.as_p }}
 {% csrf_token %}
+{#    <p><input type="submit" value="Search" id="submit"></p>#}
 </form>
 </div>
     <div class="container-fluid">
 <ol class="list-group list-group-numbered">
-   {% for card in cards %}
+   {% for word in words %}
   <li class="list-group-item d-flex justify-content-between align-items-start">
     <div class="ms-2 me-auto" >
-        <div class="fw-bold"><a class='link' href="{% url 'flashcards:card_detail' pk=card.id %}">{{ card.group }} - {{ card.question|pureword |safe}}</a></div>
-      {{ card.example |safe}}
+        <div class="fw-bold">{{ word |safe}}</div>
+
     </div>
 
   </li>
@@ -43,12 +44,30 @@
     {% endfor %}
 </ol>
     </div>
+  <script src="{% static "jquery.min.js" %}"></script>
+  <script src="{% static 'js.cookie.min.js' %}"></script>
 {% endblock %}
 
 {% block script %}
     var query_text = document.getElementsByTagName("label");
     query_text[0].style.display='none';
     var input = document.getElementById('id_query');
-    //设定为bootstrap的样式
     input.setAttribute('class','form-control');
+    //ajax请求
+    var csrftoken = Cookies.get('csrftoken');
+    function csrfSafeMethod(method) {
+      // these HTTP methods do not require CSRF protection
+      return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    $.ajaxSetup({
+      beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+          xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+      }
+    });
+
+    $(document).ready(function(){
+
+    });
 {% endblock %}

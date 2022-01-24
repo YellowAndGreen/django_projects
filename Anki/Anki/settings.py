@@ -29,6 +29,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'account.apps.AccountConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -53,8 +54,7 @@ ROOT_URLCONF = 'Anki.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [str.format(BASE_DIR, '/templates')]
-        ,
+        'DIRS': [str.format(BASE_DIR, '/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -115,3 +115,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = '../flashcards/static'
+
+# 登录选项
+LOGIN_REDIRECT_URL = 'flashcards:dashboard'
+LOGIN_URL = 'account:login'
+LOGOUT_URL = 'account:logout'
