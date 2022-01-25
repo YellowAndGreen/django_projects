@@ -1,17 +1,18 @@
-from django.shortcuts import render, get_object_or_404, redirect
+import json
+import random
 
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
+from django.shortcuts import render, get_object_or_404, redirect
 # Create your views here.
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
-from .models import Card, Recitedata, WordList
-from .forms import *
-from django.db.models import Q
-import random
-from django.contrib.auth.decorators import login_required
-from .web_query import find_synonym
-from django.contrib.auth.mixins import LoginRequiredMixin
 from readmdict import MDX
-import json
+
+from .forms import *
+from .models import *
+from .web_query import find_synonym
 
 
 class CardListView(ListView):
@@ -87,7 +88,9 @@ def index(request):
 
     return render(request, 'flashcards/anki.html',
                   {'len': len(cards),
-                   'type_proportion': type_proportion}, )
+                   'type_proportion': type_proportion,
+                   'lenlist': len(WordList.objects.all())},
+                  )
 
 
 # 删除背诵记录
@@ -122,7 +125,7 @@ def dict_search(request):
     if form.is_valid():
         cd = form.cleaned_data
         # 加载mdx文件
-        filename = "E:\\All Files\\GoldenDict\\content\\新建文件夹\\剑桥高阶.mdx"
+        filename = "flashcards/static/dict/剑桥高阶.mdx"
         headwords = [*MDX(filename)]  # 单词名列表
         items = [*MDX(filename).items()]  # 释义html源码列表
         # if len(headwords) == len(items):
@@ -156,3 +159,30 @@ def create_wordlist(request):
         cd = form.cleaned_data
     rank = []
     wordlist = WordList(owner=request.user, name=cd['query'], wordlist=rank)
+
+
+@login_required
+def recite_wordlist(request, wordlist_id, progress, rank):
+    wordlist = WordList.objects.filter(id=wordlist_id)
+    # json解析单词列表id
+    id_list = json.dumps(wordlist.wordlist)
+    # 获取当前card实例
+    current_card = get_object_or_404(Card, id=id_list[progress])
+    # 创建并保存记忆数据
+    recitedata = Recitedata(rank=rank, card=current_card)
+    recitedata.save()
+
+    # 计算完成度
+    percentage = int(wordlist.progress / wordlist.len_list)
+    # 更新进度
+    wordlist.progress = wordlist.progress + 1
+    wordlist.save()
+
+    # 获取下一个单词
+    next_word = get_object_or_404(Card, id=id_list[progress])
+
+    return render(request, 'flashcards/recite_wordlist.html',
+                  {
+                      "percentage": percentage,
+                      'next_word': next_word,
+                  })

@@ -3,7 +3,6 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 
 
-
 class Card(models.Model):
     cid = models.PositiveIntegerField(db_index=True, unique=True)
     group = models.CharField(max_length=20)
@@ -43,8 +42,10 @@ class Recitedata(models.Model):
 class WordList(models.Model):
     owner = models.ForeignKey(User, models.CASCADE, related_name='owner')
     name = models.CharField(max_length=20, blank=False)
-    wordlist = models.CharField(max_length=20000,blank=False)
+    wordlist = models.CharField(max_length=20000, blank=False)
     date = models.DateTimeField(auto_now_add=True, db_index=True)
+    progress = models.PositiveIntegerField(blank=False, default=0)
+    len_list = models.PositiveIntegerField(blank=False, default=0)
 
     def __str__(self):
         return str(self.name)

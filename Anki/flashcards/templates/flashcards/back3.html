@@ -20,7 +20,22 @@
     </style>
 {% endblock %}
 {% block Recite %} active{% endblock %}
+{% block navbar %}
+    <!--添加编辑栏-->
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="#" id="Edit" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Dropdown link
+      </a>
+      <ul class="dropdown-menu" aria-labelledby="Edit">
+          <li><a class="dropdown-item" href="#">Mark</a></li>
+        <li><a class="dropdown-item" href="#">Edit</a></li>
+        <li><a class="dropdown-item" href="#">Remove</a></li>
+        <li><a class="dropdown-item" href="#">Append</a></li>
+          <li><a class="dropdown-item" href="#">Add Tag</a></li>
+      </ul>
+    </li>
 
+{% endblock %}
 {% block content %}
         <!-- 卡片正面 -->
     <div class="accordion accordion-flush" id="accordionFlushExample">
