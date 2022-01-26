@@ -4,6 +4,7 @@ import random
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 # Create your views here.
 from django.views.generic.detail import DetailView
@@ -80,6 +81,7 @@ def search(request):
 @login_required
 def index(request):
     cards = Card.objects.all()
+    form = SearchForm()
     type_proportion = {
         'cihui': len(Card.objects.filter(group__startswith='词汇')),
         'duanyu': len(Card.objects.filter(group__startswith='短语')),
@@ -89,7 +91,9 @@ def index(request):
     return render(request, 'flashcards/anki.html',
                   {'len': len(cards),
                    'type_proportion': type_proportion,
-                   'lenlist': len(WordList.objects.all())},
+                   'lenlist': len(WordList.objects.all()),
+                   'form': form, },
+
                   )
 
 
@@ -151,38 +155,64 @@ def dict_search(request):
                   {'html_result': html_result, 'form': form, 'searchvalue': cd['query']})
 
 
-@login_required
 def create_wordlist(request):
     cd = {"query": 'list'}
     form = SearchForm(request.GET)
     if form.is_valid():
         cd = form.cleaned_data
-    rank = []
-    wordlist = WordList(owner=request.user, name=cd['query'], wordlist=rank)
+    # 找到最近的三个复习data并累计，生成一个字典
+    rank_sum_dict = map(lambda card: {'id': card.id, 'rank_sum': sum(
+        sorted([Recitedata.rank for Recitedata in card.recitedata.order_by('-date')], reverse=True)[0:3])
+    if len(card.recitedata.all()) > 2
+    else sum([Recitedata.rank for Recitedata in card.recitedata.order_by('-date')])}
+                        , Card.objects.all())
+    # 按rank排序，取前五十个值
+    # 不知道为什么id列表总为空
+    # id_list = [dic['id'] for dic in sorted(list(rank_sum_dict), key=lambda dic: dic['rank_sum'], reverse=True)[0:50]]
+    # id_list = list(
+    #     map(lambda dic: dic['id'], sorted(list(rank_sum_dict), key=lambda dic: dic['rank_sum'], reverse=True)[0:50]))
+    # print(id_list)
+    sort_list = sorted(list(rank_sum_dict), key=lambda dic: dic['rank_sum'], reverse=True)[0:50]
+    wordlist = WordList(owner=request.user, name=cd['query'], wordlist=json.dumps(sort_list)
+                        , len_list=len(sort_list))
+    wordlist.save()
 
 
 @login_required
 def recite_wordlist(request, wordlist_id, progress, rank):
-    wordlist = WordList.objects.filter(id=wordlist_id)
+    wordlist = WordList.objects.filter(id=wordlist_id)[0]
     # json解析单词列表id
-    id_list = json.dumps(wordlist.wordlist)
-    # 获取当前card实例
-    current_card = get_object_or_404(Card, id=id_list[progress])
-    # 创建并保存记忆数据
-    recitedata = Recitedata(rank=rank, card=current_card)
-    recitedata.save()
+    id_list = list(map(lambda dic: dic['id'], json.loads(wordlist.wordlist)))
+    if progress != 0:
+        # 获取当前card实例
+        current_card = get_object_or_404(Card, id=id_list[progress])
+        # 创建并保存记忆数据
+        recitedata = Recitedata(rank=rank, card=current_card)
+        recitedata.save()
 
-    # 计算完成度
-    percentage = int(wordlist.progress / wordlist.len_list)
-    # 更新进度
-    wordlist.progress = wordlist.progress + 1
-    wordlist.save()
+        # 计算完成度
+        wordlist.progress = progress + 1
+        percentage = int((wordlist.progress / wordlist.len_list)*100)
 
+        # 更新进度
+        wordlist.save()
+    else:
+        # 判断是刚进入还是进入后第一次提交卡片，若提交，则更新进度
+        if rank > 0:
+            # 计算完成度
+            percentage = int((wordlist.progress / wordlist.len_list)*100)
+            wordlist.progress = progress + 1
+            # 更新进度
+            wordlist.save()
+        else:
+            percentage = 0
     # 获取下一个单词
     next_word = get_object_or_404(Card, id=id_list[progress])
 
     return render(request, 'flashcards/recite_wordlist.html',
                   {
                       "percentage": percentage,
-                      'next_word': next_word,
+                      'object': next_word,
+                      'progress': wordlist.progress,
+                      'wordlist_id': wordlist_id,
                   })

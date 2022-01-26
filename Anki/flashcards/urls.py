@@ -13,5 +13,7 @@ urlpatterns = [
     path('search/', search, name='search'),
     path('undo/<int:card_id>', undo, name='undo'),
     path('websearch/', websearch, name='websearch'),
-    path('dict/', dict_search, name='dict')
+    path('dict/', dict_search, name='dict'),
+    path('create_list/', create_wordlist, name='create_list'),
+    path('recite_wordlist/<int:wordlist_id>/<int:progress>/<int:rank>/', recite_wordlist, name='recite_wordlist'),
 ]

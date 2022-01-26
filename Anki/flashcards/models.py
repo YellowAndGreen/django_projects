@@ -45,7 +45,7 @@ class WordList(models.Model):
     wordlist = models.CharField(max_length=20000, blank=False)
     date = models.DateTimeField(auto_now_add=True, db_index=True)
     progress = models.PositiveIntegerField(blank=False, default=0)
-    len_list = models.PositiveIntegerField(blank=False, default=0)
+    len_list = models.PositiveIntegerField(blank=False, default=50)
 
     def __str__(self):
         return str(self.name)
