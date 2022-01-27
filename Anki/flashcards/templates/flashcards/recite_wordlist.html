@@ -47,7 +47,7 @@
     <div class="accordion-item">
     <h2 class="accordion-header" id="flush-headingZero">
       <button class="accordion-button collapsed word" type="button" data-bs-toggle="collapse" aria-expanded="false">
-        {{ object.group }}
+        {{ object.group }}{{ progress }}
       </button>
     </h2>
   </div>
@@ -132,7 +132,10 @@
     //回退按钮点击事件
 
     function undo(){
-        to = window.location.href.split('flashcards')[0]+'flashcards/undo/'+id[id.length-2];
+        //url中不能包含负号，progress-1当其为0时会发生错误
+        if({{ progress }}-1==0){progress=0;}
+        else progress={{ progress }}-1;
+        to = window.location.href.split('flashcards')[0]+'flashcards/undo_list/'+id[id.length-2]+'/{{ wordlist_id }}/'+String(progress);
         // 删除此次和上次的id，上次的id会自动加上
         id.pop();
         id.pop();

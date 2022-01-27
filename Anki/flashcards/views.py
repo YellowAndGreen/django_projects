@@ -1,10 +1,10 @@
 import json
 import random
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
-from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 # Create your views here.
 from django.views.generic.detail import DetailView
@@ -87,12 +87,14 @@ def index(request):
         'duanyu': len(Card.objects.filter(group__startswith='短语')),
         'bianxi': len(Card.objects.filter(group__startswith='辨析'))
     }
-
+    # 获取当前用户的单词列表
+    wordlists = request.user.owner.all()
     return render(request, 'flashcards/anki.html',
                   {'len': len(cards),
                    'type_proportion': type_proportion,
                    'lenlist': len(WordList.objects.all()),
-                   'form': form, },
+                   'form': form,
+                   'wordlists': wordlists},
 
                   )
 
@@ -105,6 +107,16 @@ def undo(request, card_id):
     card[0].recitedata.latest('date').delete()
 
     return redirect(card[0].get_absolute_url())
+
+
+# 删除背诵记录
+@login_required
+def undo_list(request, card_id, list_id, progress):
+    # 需要撤回的卡片和需要删除背诵记录的卡是一张卡
+    card = Card.objects.filter(id=card_id)
+    card[0].recitedata.latest('date').delete()
+    # 修改进度
+    return redirect('flashcards:recite_wordlist', list_id, progress, 0)
 
 
 # 网络搜索
@@ -155,6 +167,7 @@ def dict_search(request):
                   {'html_result': html_result, 'form': form, 'searchvalue': cd['query']})
 
 
+@login_required
 def create_wordlist(request):
     cd = {"query": 'list'}
     form = SearchForm(request.GET)
@@ -176,14 +189,27 @@ def create_wordlist(request):
     wordlist = WordList(owner=request.user, name=cd['query'], wordlist=json.dumps(sort_list)
                         , len_list=len(sort_list))
     wordlist.save()
+    messages.success(request, '单词列表创建成功')
+    return redirect('flashcards:dashboard')
 
 
 @login_required
 def recite_wordlist(request, wordlist_id, progress, rank):
     wordlist = WordList.objects.filter(id=wordlist_id)[0]
+    # 判断请求progress和数据库progress是否相等，若不同，则将后者覆盖（在重新复习的时候可能出现的问题）
+    if progress != wordlist.progress:
+        wordlist.progress = progress
+    # 判断是否完成单词列表，若完成，则返回主页
+    if progress == wordlist.len_list:
+        messages.success(request, '您已背完该单词列表！')
+        return redirect('flashcards:dashboard')
     # json解析单词列表id
     id_list = list(map(lambda dic: dic['id'], json.loads(wordlist.wordlist)))
-    if progress != 0:
+    # 判断是刚进入还是进入后第一次提交卡片
+    # 若提交，则更新进度
+    # 若刚进入，则不更新进度
+
+    if rank > 0:
         # 获取当前card实例
         current_card = get_object_or_404(Card, id=id_list[progress])
         # 创建并保存记忆数据
@@ -192,22 +218,14 @@ def recite_wordlist(request, wordlist_id, progress, rank):
 
         # 计算完成度
         wordlist.progress = progress + 1
-        percentage = int((wordlist.progress / wordlist.len_list)*100)
-
+        percentage = int((wordlist.progress / wordlist.len_list) * 100)
         # 更新进度
         wordlist.save()
     else:
-        # 判断是刚进入还是进入后第一次提交卡片，若提交，则更新进度
-        if rank > 0:
-            # 计算完成度
-            percentage = int((wordlist.progress / wordlist.len_list)*100)
-            wordlist.progress = progress + 1
-            # 更新进度
-            wordlist.save()
-        else:
-            percentage = 0
+        percentage = int((wordlist.progress / wordlist.len_list) * 100)
     # 获取下一个单词
-    next_word = get_object_or_404(Card, id=id_list[progress])
+    # 必须使用数据库中的wordlist.progress，否则使用progress会导致第一个不更新
+    next_word = get_object_or_404(Card, id=id_list[wordlist.progress])
 
     return render(request, 'flashcards/recite_wordlist.html',
                   {
@@ -216,3 +234,10 @@ def recite_wordlist(request, wordlist_id, progress, rank):
                       'progress': wordlist.progress,
                       'wordlist_id': wordlist_id,
                   })
+
+
+@login_required
+def delete_wordlist(request, wordlist_id):
+    get_object_or_404(WordList, id=wordlist_id).delete()
+    messages.success(request, '单词列表删除成功')
+    return redirect('flashcards:dashboard')

@@ -4,38 +4,80 @@
 {% block title %}Anki{% endblock %}
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.2.2/dist/echarts.js"></script>
+        <style>
+        a{
+            text-decoration: none;
+        }
+        #red{
+            color: red;
+        }
+                #id_query{
+        margin-top: 2%;}
+    </style>
 {% endblock %}
 {% block Anki %} active{% endblock %}
 {% block content %}
-    <p class="lead">当前词库有{{ len }}个单词<br>当前用户有{{ lenlist }}个单词列表，创建单词列表</p>
-    <form  class="align-items-center col-6 " method="get" action="{% url 'flashcards:create_list' %}">
+    {% if messages %}
+    <div class="mt-1">
+    {% for message in messages %}
+    <div class="alert alert-success alert-dismissible" role="alert">
+        {{ message|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+        </button></div>
+    {% endfor %}
+    </div>
+    {% endif %}
+    <h6 class="lead h6">Hello,{{ request.user }} <a href="{% url 'account:logout' %}">Logout</a></h6>
+    <h6 class="lead h6">当前词库有{{ len }}个单词，{{ lenlist }}个单词列表</h6>
 
-{{ form.as_p }}
+    <div class="container-fluid">
+<ol class="list-group list-group-numbered">
+   {% for wordlist in wordlists %}
+  <li class="list-group-item d-flex justify-content-between align-items-start">
+    <div class="ms-2 me-auto" >
+        <div class="fw-bold"><a class='link' href="{% if wordlist.progress != wordlist.len_list %}{% url 'flashcards:recite_wordlist' wordlist.id wordlist.progress 0 %}{% else %}{% url 'flashcards:recite_wordlist' wordlist.id 0 0 %}{% endif %}">{{ wordlist.name }}</a>
+        <span class="badge rounded-pill bg-primary">{{ wordlist.progress }}/{{ wordlist.len_list }}</span>
+        <span class="badge rounded-pill bg-danger" onClick="location.href='{% url 'flashcards:delete_wordlist' wordlist.id %}'">Delete</span>
+        </div>
+    </div>
+
+  </li>
+
+    {% endfor %}
+</ol>
+    </div>
+
+<form  id = 'form1' class="align-items-center col-6 " method="get" action="{% url 'flashcards:create_list' %}">
+
+<div class="form-floating mb-3 mt-3">
+  <input type="text" class="form-control" id="floatingInput" placeholder="list" name="query">
+  <label for="floatingInput">以难度创建</label>
+</div>
 
 {% csrf_token %}
 
 </form>
-    <div class="form-check">
-  <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
-  <label class="form-check-label lead fs-6" for="flexRadioDefault1">
-    以难度创建
-  </label>
+<form  id = 'form2' class="align-items-center col-6 " method="get" action="{% url 'flashcards:create_list' %}">
+
+<div class="form-floating mb-3">
+  <input type="text" class="form-control" id="floatingInput2" placeholder="list" name="query">
+  <label for="floatingInput2">以标签创建</label>
 </div>
-<div class="form-check">
-  <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" checked>
-  <label class="form-check-label lead fs-6" for="flexRadioDefault2">
-    以标签创建
-  </label>
-</div>
+
+{% csrf_token %}
+
+</form>
     <div class="container-fluid">
     <div id="main" style="width: 100%;height:400px;"></div>
     </div>
-    <div class="container-fluid">
-    <div id="calendar" style="width: 800px;height:400px;"></div>
-    </div>
+{#    <div class="container-fluid">#}
+{#    <div id="calendar" style="width: 800px;height:400px;"></div>#}
+{#    </div>#}
 
 {% endblock %}
 {% block script %}
+
+// 图表
 //分类占比
 var app = {};
 var chartDom = document.getElementById('main');

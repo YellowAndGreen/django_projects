@@ -8,3 +8,7 @@ class SearchForm(forms.Form):
 class LoginForm(forms.Form):
     username = forms.CharField()
     password = forms.CharField(widget=forms.PasswordInput)
+
+
+class CreateForm(forms.Form):
+    query2 = forms.CharField()

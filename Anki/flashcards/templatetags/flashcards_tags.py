@@ -30,3 +30,6 @@ def pureword(text):
 @register.filter(name='strftime')
 def strftime(text):
     return text.strftime("%Y-%m-%d")
+
+
+

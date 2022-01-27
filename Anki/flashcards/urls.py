@@ -12,8 +12,10 @@ urlpatterns = [
     path("recitedata/", recitedatadisplay, name="display"),
     path('search/', search, name='search'),
     path('undo/<int:card_id>', undo, name='undo'),
+    path('undo_list/<int:card_id>/<int:list_id>/<int:progress>/', undo_list, name='undo_list'),
     path('websearch/', websearch, name='websearch'),
     path('dict/', dict_search, name='dict'),
     path('create_list/', create_wordlist, name='create_list'),
+    path('delete_wordlist/<int:wordlist_id>/', delete_wordlist, name='delete_wordlist'),
     path('recite_wordlist/<int:wordlist_id>/<int:progress>/<int:rank>/', recite_wordlist, name='recite_wordlist'),
 ]
